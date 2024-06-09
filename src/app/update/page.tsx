@@ -19,6 +19,7 @@ import dayjs from "dayjs";
 import "dayjs/locale/th";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { Suspense } from "react";
 
 dayjs.locale("th");
 
@@ -42,6 +43,16 @@ const genderSelect = [
 ];
 
 export default function EditEmployee() {
+  return (
+    <main>
+      <Suspense fallback={<div>Loading...</div>}>
+        <EmployeeEditor />
+      </Suspense>
+    </main>
+  );
+}
+
+function EmployeeEditor() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const uuid = searchParams.get("employee_uuid");
