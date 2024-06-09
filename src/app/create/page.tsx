@@ -8,13 +8,11 @@ import {
   Container,
   Typography,
   Grid,
-  Dialog,
-  DialogContent,
-  DialogTitle,
   Select,
   MenuItem,
   InputLabel,
   FormControl,
+  Autocomplete,
 } from "@mui/material";
 
 import dayjs from "dayjs";
@@ -51,6 +49,7 @@ export default function CreateEmployee() {
   const [selectedDistrictId, setSelectedDistrictId] = useState(Number);
   const [selectedProvince, setSelectedProvince] = useState("");
   const [selectedDistrict, setSelectedDistrict] = useState("");
+  const [selectedSubDistrict, setSelectedSubDistrict] = useState("");
   const [birthDate, setBirthDate] = useState<dayjs.Dayjs | null>(null);
   const [expiryDate, setExpiryDate] = useState<dayjs.Dayjs | null>(null);
 
@@ -117,7 +116,7 @@ export default function CreateEmployee() {
       last_name: formData.get("last_name") as string,
       address: formData.get("address") as string,
       gender: parseInt(formData.get("gender") as string, 10),
-      sub_district: formData.get("sub_district") as string,
+      sub_district: selectedSubDistrict,
       district: selectedDistrict,
       province: selectedProvince,
       birth_day: birthDate?.add(1, "day"),
@@ -130,7 +129,7 @@ export default function CreateEmployee() {
         toast.success(result?.data);
         router.push("/");
       } else {
-        toast.error("อุ๊ปซ์ มีบางอย่างผิดพลาด");
+        toast.error("Oops, something went wrong!");
       }
     } catch (error) {
       console.error("Error updating employee:", error);
@@ -186,65 +185,80 @@ export default function CreateEmployee() {
               </Grid>
               <Grid item xs={12} sm={4}>
                 <FormControl fullWidth>
-                  <InputLabel id="province-label">จังหวัด</InputLabel>
-                  <Select
-                    labelId="province-label"
-                    name="province"
-                    onChange={handleProvinceChange}
-                  >
-                    <MenuItem value="" disabled>
-                      เลือกจังหวัด
-                    </MenuItem>
-                    {province.map((province: any) => (
-                      <MenuItem key={province.id} value={province.id}>
-                        {province.name_th}
-                      </MenuItem>
-                    ))}
-                  </Select>
+                  <Autocomplete
+                    id="province-autocomplete"
+                    options={province}
+                    getOptionLabel={(option) => option.name_th}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="จังหวัด"
+                        variant="outlined"
+                      />
+                    )}
+                    onChange={(event, newValue) => {
+                      handleProvinceChange({
+                        target: {
+                          name: "province",
+                          value: newValue ? newValue.id : "",
+                        },
+                      });
+                    }}
+                    renderOption={(props, option) => (
+                      <li {...props} key={option.id}>
+                        {option.name_th}
+                      </li>
+                    )}
+                  />
                 </FormControl>
               </Grid>
               <Grid item xs={12} sm={4}>
                 <FormControl fullWidth>
-                  <InputLabel id="district-label">อำเภอ</InputLabel>
-                  <Select
-                    labelId="district-label"
-                    name="district"
-                    onChange={handleDistrictChange}
-                    displayEmpty
+                  <Autocomplete
+                    id="district-autocomplete"
+                    options={district}
+                    getOptionLabel={(option) => option.name_th}
+                    renderInput={(params) => (
+                      <TextField {...params} label="อำเภอ" variant="outlined" />
+                    )}
+                    onChange={(event, newValue) => {
+                      handleDistrictChange({
+                        target: {
+                          name: "district",
+                          value: newValue ? newValue.id : "",
+                        },
+                      });
+                    }}
+                    renderOption={(props, option) => (
+                      <li {...props} key={option.id}>
+                        {option.name_th}
+                      </li>
+                    )}
                     disabled={!selectedProvinceId}
-                  >
-                    <MenuItem value="" disabled>
-                      เลือกอำเภอ
-                    </MenuItem>
-                    {district.map((district: any) => (
-                      <MenuItem key={district.id} value={district.id}>
-                        {district.name_th}
-                      </MenuItem>
-                    ))}
-                  </Select>
+                  />
                 </FormControl>
               </Grid>
               <Grid item xs={12} sm={4}>
                 <FormControl fullWidth>
-                  <InputLabel id="sub_district-label">ตำบล</InputLabel>
-                  <Select
-                    labelId="sub_district-label"
-                    name="sub_district"
-                    displayEmpty
+                  <Autocomplete
+                    id="sub-district-autocomplete"
+                    options={subDistrict}
+                    getOptionLabel={(option) => option.name_th}
+                    renderInput={(params) => (
+                      <TextField {...params} label="ตำบล" variant="outlined" />
+                    )}
+                    onChange={(event, newValue) => {
+                      setSelectedSubDistrict(
+                        (newValue as SubDistrictType).name_th
+                      );
+                    }}
+                    renderOption={(props, option) => (
+                      <li {...props} key={option.id}>
+                        {option.name_th}
+                      </li>
+                    )}
                     disabled={!selectedDistrictId}
-                  >
-                    <MenuItem value="" disabled>
-                      เลือกตำบล
-                    </MenuItem>
-                    {subDistrict.map((sub_district: any) => (
-                      <MenuItem
-                        key={sub_district.id}
-                        value={sub_district.name_th}
-                      >
-                        {sub_district.name_th}
-                      </MenuItem>
-                    ))}
-                  </Select>
+                  />
                 </FormControl>
               </Grid>
               <Grid item xs={12}>

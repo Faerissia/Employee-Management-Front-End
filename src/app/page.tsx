@@ -1,4 +1,3 @@
-// pages/index.tsx or app/page.tsx (depending on your Next.js version)
 "use client";
 
 import { useState, useEffect } from "react";
@@ -17,8 +16,16 @@ import {
   DialogContentText,
   DialogTitle,
   Button,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+import { SelectChangeEvent } from "@mui/material/Select";
+import { exportToCSV } from "@/utils/exportToCSV";
+import { isCardExpired } from "@/utils/checkCardExpired";
 
 dayjs.extend(buddhistEra);
 
@@ -41,6 +48,7 @@ export default function Home() {
   const [employeeList, setEmployeeList] = useState<any[]>([]);
   const [selectedRows, setSelectedRows] = useState<GridRowSelectionModel>([]);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [filterExpired, setFilterExpired] = useState("all");
   const router = useRouter();
 
   const getList = async () => {
@@ -74,23 +82,32 @@ export default function Home() {
     }
     setDeleteOpen(false);
     getList();
+    toast.success("delete employee successfully!");
   };
 
-  const rows = employeeList.map((item: any) => ({
-    ...item,
-    id: item.uuid,
-    birth_day: dayjs(item.birth_day).locale("th").format("DD MMMM BBBB"),
-    gender: item.gender === 1 ? "ชาย" : item.gender === 2 ? "หญิง" : "อื่นๆ",
-    expired_id_card: dayjs(item.expired_id_card)
-      .locale("th")
-      .format("DD MMMM BBBB"),
-    created_date: dayjs(item.created_date)
-      .locale("th")
-      .format("DD MMMM BBBB HH:mm"),
-    updated_date: dayjs(item.updated_date)
-      .locale("th")
-      .format("DD MMMM BBBB HH:mm"),
-  }));
+  const filteredRows = employeeList
+    .filter(
+      (item) => filterExpired === "all" || isCardExpired(item.expired_id_card)
+    )
+    .map((item: any) => ({
+      ...item,
+      id: item.uuid,
+      birth_day: dayjs(item.birth_day).locale("th").format("DD MMMM BBBB"),
+      gender: item.gender === 1 ? "ชาย" : item.gender === 2 ? "หญิง" : "อื่นๆ",
+      expired_id_card: dayjs(item.expired_id_card)
+        .locale("th")
+        .format("DD MMMM BBBB"),
+      created_date: dayjs(item.created_date)
+        .locale("th")
+        .format("DD MMMM BBBB HH:mm"),
+      updated_date: dayjs(item.updated_date)
+        .locale("th")
+        .format("DD MMMM BBBB HH:mm"),
+    }));
+
+  const handleFilterChange = (event: SelectChangeEvent<string>) => {
+    setFilterExpired(event.target.value);
+  };
 
   useEffect(() => {
     getList();
@@ -101,41 +118,64 @@ export default function Home() {
       <h1 className="text-4xl font-bold text-center text-indigo-800 drop-shadow-md">
         ระบบจัดการพนักงาน
       </h1>
-      <div className="bg-white rounded-lg shadow-lg p-6 mx-auto w-full max-w-8xl">
-        {/* menu create edit delete */}
-        <div className="mb-4 flex justify-start gap-4">
-          <Button
-            variant="contained"
-            color="success"
-            onClick={handleCreateClick}
-          >
-            เพิ่ม
-          </Button>
-          <Button
-            variant="contained"
-            color="warning"
-            onClick={handleEditClick}
-            disabled={selectedRows.length !== 1}
-          >
-            แก้ไข
-          </Button>
-          <Button
-            variant="contained"
-            color="error"
-            onClick={handleDeleteClick}
-            disabled={selectedRows.length === 0}
-          >
-            ลบ
-          </Button>
+      <div className="bg-white rounded-lg shadow-lg p-6 mx-auto w-fit max-w-full">
+        <div className="mb-4 flex justify-between items-center gap-4">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="contained"
+              color="success"
+              onClick={handleCreateClick}
+            >
+              เพิ่ม
+            </Button>
+            <Button
+              variant="contained"
+              color="warning"
+              onClick={handleEditClick}
+              disabled={selectedRows.length !== 1}
+            >
+              แก้ไข
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={handleDeleteClick}
+              disabled={selectedRows.length === 0}
+            >
+              ลบ
+            </Button>
+          </div>
+          <div className="flex items-center gap-4">
+            <FormControl
+              variant="outlined"
+              size="small"
+              style={{ minWidth: 200 }}
+            >
+              <InputLabel>สถานะบัตรประชาชน</InputLabel>
+              <Select
+                value={filterExpired}
+                onChange={handleFilterChange}
+                label="สถานะบัตรประชาชน"
+              >
+                <MenuItem value="all">ทั้งหมด</MenuItem>
+                <MenuItem value="expired">ใกล้หมดอายุ/หมดอายุ</MenuItem>
+              </Select>
+            </FormControl>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => exportToCSV(columns, filteredRows, selectedRows)}
+            >
+              ส่งออก CSV
+            </Button>
+          </div>
         </div>
-        {employeeList.length > 0 ? (
+        {filteredRows.length > 0 ? (
           <DataGrid
-            rows={rows}
+            rows={filteredRows}
             columns={columns}
             initialState={{
-              pagination: {
-                paginationModel: { page: 0, pageSize: 10 },
-              },
+              pagination: { paginationModel: { page: 0, pageSize: 10 } },
             }}
             pageSizeOptions={[5, 10, 25]}
             checkboxSelection

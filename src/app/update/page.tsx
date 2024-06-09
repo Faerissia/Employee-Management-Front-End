@@ -1,6 +1,4 @@
-// pages/edit-employee.tsx or app/edit-employee/page.tsx
 "use client";
-
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { handleUpdateEmployee, handleGetEmployee } from "../../api/employeeApi";
@@ -10,10 +8,11 @@ import {
   Container,
   Typography,
   Grid,
+  InputLabel,
   Select,
   MenuItem,
-  InputLabel,
   FormControl,
+  Autocomplete,
 } from "@mui/material";
 
 import dayjs from "dayjs";
@@ -50,10 +49,14 @@ export default function EditEmployee() {
   const [province, setProvince] = useState<ProvinceType[]>([]);
   const [district, setDistrict] = useState<DistrictType[]>([]);
   const [subDistrict, setSubDistrict] = useState<SubDistrictType[]>([]);
-  const [selectedProvinceId, setSelectedProvinceId] = useState(Number);
-  const [selectedDistrictId, setSelectedDistrictId] = useState(Number);
-  const [selectedProvince, setSelectedProvince] = useState("");
-  const [selectedDistrict, setSelectedDistrict] = useState("");
+  const [selectedProvince, setSelectedProvince] = useState<ProvinceType | null>(
+    null
+  );
+  const [selectedDistrict, setSelectedDistrict] = useState<DistrictType | null>(
+    null
+  );
+  const [selectedSubDistrict, setSelectedSubDistrict] =
+    useState<SubDistrictType | null>(null);
   const [birthDate, setBirthDate] = useState<dayjs.Dayjs | null>(null);
   const [expiryDate, setExpiryDate] = useState<dayjs.Dayjs | null>(null);
 
@@ -63,19 +66,19 @@ export default function EditEmployee() {
   };
 
   const getDistrictList = async () => {
-    if (!selectedProvinceId) return;
+    if (!selectedProvince) return;
     const district: any = await getDistrict();
     const filter_district = district?.data.filter(
-      (item: any) => item.province_id === selectedProvinceId
+      (item: any) => item.province_id === selectedProvince.id
     );
     setDistrict(filter_district);
   };
 
   const getSubDistrictList = async () => {
-    if (!selectedDistrictId) return;
+    if (!selectedDistrict) return;
     const sub_district: any = await getSubDistrict();
     const filter_sub_district = sub_district?.data.filter(
-      (item: any) => item.amphure_id === selectedDistrictId
+      (item: any) => item.amphure_id === selectedDistrict.id
     );
     setSubDistrict(filter_sub_district);
   };
@@ -85,16 +88,16 @@ export default function EditEmployee() {
   }, []);
 
   useEffect(() => {
-    if (selectedProvinceId) {
+    if (selectedProvince) {
       getDistrictList();
     }
-  }, [selectedProvinceId]);
+  }, [selectedProvince]);
 
   useEffect(() => {
-    if (selectedDistrictId) {
+    if (selectedDistrict) {
       getSubDistrictList();
     }
-  }, [selectedDistrictId]);
+  }, [selectedDistrict]);
 
   useEffect(() => {
     const fetchEmployee = async () => {
@@ -116,8 +119,7 @@ export default function EditEmployee() {
         (item: any) => item.name_th === employee.province
       );
       if (initialProvince) {
-        setSelectedProvinceId(initialProvince.id);
-        setSelectedProvince(initialProvince.name_th);
+        setSelectedProvince(initialProvince);
       }
     }
   }, [employee, province]);
@@ -128,34 +130,21 @@ export default function EditEmployee() {
         (item: any) => item.name_th === employee.district
       );
       if (initialDistrict) {
-        setSelectedDistrictId(initialDistrict.id);
-        setSelectedDistrict(initialDistrict.name_th);
+        setSelectedDistrict(initialDistrict);
       }
     }
   }, [employee, district]);
 
-  const handleProvinceChange = (event: any) => {
-    const provinceId = event.target.value;
-    setSelectedProvinceId(provinceId);
-    setSelectedDistrictId(0);
-    const selectProvinceObject: any = province.find(
-      (p: any) => p.id === provinceId
-    );
-    if (selectProvinceObject) {
-      setSelectedProvince(selectProvinceObject.name_th);
+  useEffect(() => {
+    if (employee && subDistrict.length > 0) {
+      const initialSubDistrict = subDistrict.find(
+        (item: any) => item.name_th === employee.sub_district
+      );
+      if (initialSubDistrict) {
+        setSelectedSubDistrict(initialSubDistrict);
+      }
     }
-  };
-
-  const handleDistrictChange = (event: any) => {
-    const districtId = event.target.value;
-    setSelectedDistrictId(districtId);
-    const selectDistrictObject: any = district.find(
-      (d: any) => d.id === districtId
-    );
-    if (selectDistrictObject) {
-      setSelectedDistrict(selectDistrictObject.name_th);
-    }
-  };
+  }, [employee, subDistrict]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -166,9 +155,9 @@ export default function EditEmployee() {
       last_name: formData.get("last_name") as string,
       gender: parseInt(formData.get("gender") as string, 10),
       address: formData.get("address") as string,
-      sub_district: formData.get("sub_district") as string,
-      district: selectedDistrict,
-      province: selectedProvince,
+      sub_district: selectedSubDistrict ? selectedSubDistrict.name_th : "",
+      district: selectedDistrict ? selectedDistrict.name_th : "",
+      province: selectedProvince ? selectedProvince.name_th : "",
       birth_day: birthDate?.toISOString(),
       expired_id_card: expiryDate?.toISOString(),
     };
@@ -179,7 +168,7 @@ export default function EditEmployee() {
         toast.success(result?.data);
         router.push("/");
       } else {
-        toast.error("อุ๊ปซ์ มีบางอย่างผิดพลาด");
+        toast.error("Oops, something went wrong!");
       }
     } catch (error) {
       console.error("Error updating employee:", error);
@@ -249,70 +238,78 @@ export default function EditEmployee() {
                 />
               </Grid>
               <Grid item xs={12} sm={4}>
-                <FormControl fullWidth>
-                  <InputLabel id="province-label">จังหวัด</InputLabel>
-                  <Select
-                    labelId="province-label"
-                    name="province"
-                    value={selectedProvinceId || ""}
-                    onChange={handleProvinceChange}
-                  >
-                    <MenuItem value="" disabled>
-                      เลือกจังหวัด
-                    </MenuItem>
-                    {province.map((p: any) => (
-                      <MenuItem key={p.id} value={p.id}>
-                        {p.name_th}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                <Autocomplete
+                  id="province-autocomplete"
+                  options={province}
+                  getOptionLabel={(option) => option.name_th}
+                  value={selectedProvince}
+                  onChange={(event, newValue) => {
+                    setSelectedProvince(newValue);
+                    setSelectedDistrict(null);
+                    setSelectedSubDistrict(null);
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="เลือกจังหวัด"
+                      variant="outlined"
+                    />
+                  )}
+                  renderOption={(props, option) => (
+                    <li {...props} key={option.id}>
+                      {option.name_th}
+                    </li>
+                  )}
+                />
               </Grid>
               <Grid item xs={12} sm={4}>
-                <FormControl fullWidth>
-                  <InputLabel id="district-label">อำเภอ</InputLabel>
-                  <Select
-                    labelId="district-label"
-                    value={selectedDistrictId || ""}
-                    name="district"
-                    onChange={handleDistrictChange}
-                    displayEmpty
-                    disabled={!selectedProvinceId}
-                  >
-                    <MenuItem value="" disabled>
-                      เลือกอำเภอ
-                    </MenuItem>
-                    {district.map((d: any) => (
-                      <MenuItem key={d.id} value={d.id}>
-                        {d.name_th}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                <Autocomplete
+                  id="district-autocomplete"
+                  options={district}
+                  getOptionLabel={(option) => option.name_th}
+                  value={selectedDistrict}
+                  onChange={(event, newValue) => {
+                    setSelectedDistrict(newValue);
+                    setSelectedSubDistrict(null);
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="เลือกอำเภอ"
+                      variant="outlined"
+                    />
+                  )}
+                  renderOption={(props, option) => (
+                    <li {...props} key={option.id}>
+                      {option.name_th}
+                    </li>
+                  )}
+                  disabled={!selectedProvince}
+                />
               </Grid>
               <Grid item xs={12} sm={4}>
-                <FormControl fullWidth>
-                  <InputLabel id="sub_district-label">ตำบล</InputLabel>
-                  <Select
-                    labelId="sub_district-label"
-                    name="sub_district"
-                    defaultValue={employee.sub_district || ""}
-                    displayEmpty
-                    disabled={!selectedDistrictId}
-                  >
-                    <MenuItem value="" disabled>
-                      เลือกตำบล
-                    </MenuItem>
-                    {subDistrict.map((sub_district: any) => (
-                      <MenuItem
-                        key={sub_district.id}
-                        value={sub_district.name_th}
-                      >
-                        {sub_district.name_th}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+                <Autocomplete
+                  id="sub-district-autocomplete"
+                  options={subDistrict}
+                  getOptionLabel={(option) => option.name_th}
+                  value={selectedSubDistrict}
+                  onChange={(event, newValue) => {
+                    setSelectedSubDistrict(newValue);
+                  }}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="เลือกตำบล"
+                      variant="outlined"
+                    />
+                  )}
+                  renderOption={(props, option) => (
+                    <li {...props} key={option.id}>
+                      {option.name_th}
+                    </li>
+                  )}
+                  disabled={!selectedDistrict}
+                />
               </Grid>
               <Grid item xs={12}>
                 <DatePicker
