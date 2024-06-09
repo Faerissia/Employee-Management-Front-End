@@ -44,11 +44,28 @@ const columns: GridColDef[] = [
   { field: "updated_date", headerName: "แก้ไขเมื่อ", width: 180 },
 ];
 
+const thaiMonths = [
+  { value: "all", label: "ทั้งหมด" },
+  { value: "1", label: "มกราคม" },
+  { value: "2", label: "กุมภาพันธ์" },
+  { value: "3", label: "มีนาคม" },
+  { value: "4", label: "เมษายน" },
+  { value: "5", label: "พฤษภาคม" },
+  { value: "6", label: "มิถุนายน" },
+  { value: "7", label: "กรกฎาคม" },
+  { value: "8", label: "สิงหาคม" },
+  { value: "9", label: "กันยายน" },
+  { value: "10", label: "ตุลาคม" },
+  { value: "11", label: "พฤศจิกายน" },
+  { value: "12", label: "ธันวาคม" },
+];
+
 export default function Home() {
   const [employeeList, setEmployeeList] = useState<any[]>([]);
   const [selectedRows, setSelectedRows] = useState<GridRowSelectionModel>([]);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [filterExpired, setFilterExpired] = useState("all");
+  const [filterBirthMonth, setFilterBirthMonth] = useState("all");
   const router = useRouter();
 
   const getList = async () => {
@@ -89,6 +106,11 @@ export default function Home() {
     .filter(
       (item) => filterExpired === "all" || isCardExpired(item.expired_id_card)
     )
+    .filter(
+      (item) =>
+        filterBirthMonth === "all" ||
+        dayjs(item.birth_day).format("M") === filterBirthMonth
+    )
     .map((item: any) => ({
       ...item,
       id: item.uuid,
@@ -109,18 +131,22 @@ export default function Home() {
     setFilterExpired(event.target.value);
   };
 
+  const handleFilterBirthMonthChange = (event: SelectChangeEvent<string>) => {
+    setFilterBirthMonth(event.target.value);
+  };
+
   useEffect(() => {
     getList();
   }, []);
 
   return (
-    <main className="bg-gradient-to-br from-blue-100 to-purple-100 min-h-screen p-8 sm:p-8 flex flex-col gap-8">
+    <main className="bg-gradient-to-br from-blue-100 to-purple-100 min-h-screen p-4 sm:p-8 flex flex-col gap-4">
       <h1 className="text-4xl font-bold text-center text-indigo-800 drop-shadow-md">
         ระบบจัดการพนักงาน
       </h1>
-      <div className="bg-white rounded-lg shadow-lg p-6 mx-auto w-fit max-w-full">
-        <div className="mb-4 flex justify-between items-center gap-4">
-          <div className="flex items-center gap-4">
+      <div className="bg-white rounded-lg shadow-lg p-4 sm:p-6 mx-auto w-full sm:max-w-full">
+        <div className="mb-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center gap-4">
             <Button
               variant="contained"
               color="success"
@@ -145,7 +171,7 @@ export default function Home() {
               ลบ
             </Button>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center gap-4">
             <FormControl
               variant="outlined"
               size="small"
@@ -161,6 +187,26 @@ export default function Home() {
                 <MenuItem value="expired">ใกล้หมดอายุ/หมดอายุ</MenuItem>
               </Select>
             </FormControl>
+
+            <FormControl
+              variant="outlined"
+              size="small"
+              style={{ minWidth: 200 }}
+            >
+              <InputLabel>เดือนเกิด</InputLabel>
+              <Select
+                value={filterBirthMonth}
+                onChange={handleFilterBirthMonthChange}
+                label="เดือนเกิด"
+              >
+                {thaiMonths.map((month) => (
+                  <MenuItem key={month.value} value={month.value}>
+                    {month.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
             <Button
               variant="contained"
               color="primary"
