@@ -1,6 +1,7 @@
-# Check the Website here [เข้าชมเว็บไซต์](https://nontaphat-employee-management-assignment.vercel.app/)
+# Check the Website here
 
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+ผมได้ deploy ทั้ง Front-End และ Back-End ไว้ที่ Raspberry Pi ของผมแล้วลองเข้าดูได้ครับ
+[เข้าชมเว็บไซต์](http://faerissia.duckdns.org/)
 
 ## Getting Started
 
