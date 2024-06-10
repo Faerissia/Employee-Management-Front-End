@@ -1,7 +1,7 @@
 # Check the Website here
 
 ผมได้ deploy ทั้ง Front-End และ Back-End ไว้ที่ Raspberry Pi ของผมแล้วลองเข้าดูได้ครับ
-[เข้าชมเว็บไซต์](http://faerissia.duckdns.org/)
+[เข้าชมเว็บไซต์](http://faerissia.duckdns.org:3000/)
 
 ## Getting Started
 
